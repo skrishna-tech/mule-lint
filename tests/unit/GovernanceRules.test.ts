@@ -1,4 +1,4 @@
-import { PomValidationRule, GitHygieneRule } from '../../src/rules/governance/GovernanceRules';
+import { PomValidationRule, GitHygieneRule, OrgAppNameRule } from '../../src/rules/governance/GovernanceRules';
 import * as fs from 'fs';
 import * as path from 'path';
 import { vi } from 'vitest';

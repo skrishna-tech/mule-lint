@@ -10,7 +10,7 @@ import { BaseRule } from '../base/BaseRule';
 export class StructuredLoggingRule extends BaseRule {
   id = 'LOG-001';
   name = 'Structured Logging';
-  description = 'Recommend JSON logger format over plain text';
+  description = 'Recommend AW JSON logger format over plain text';
   severity = 'info' as const;
   category = 'logging' as const;
 
@@ -24,7 +24,7 @@ export class StructuredLoggingRule extends BaseRule {
 
     // Look for JSON logger module configuration
     const jsonLoggerConfig = this.select(
-      '//*[contains(local-name(), "json-logger") or contains(local-name(), "jsonlogger")]',
+      '//*[contains(local-name(), "json-logger") or contains(local-name(), "jsonlogger") or contains(local-name(), "aw-json-logger")]',
       doc,
     );
 
@@ -39,7 +39,7 @@ export class StructuredLoggingRule extends BaseRule {
           'Project uses standard logger instead of JSON structured logging',
           {
             suggestion:
-              'Consider using JSON Logger Module for structured logging in production. This enables better log aggregation and analysis.',
+              'Consider using AW JSON Logger Module for structured logging in production. This enables better log aggregation and analysis.',
           },
         ),
       );

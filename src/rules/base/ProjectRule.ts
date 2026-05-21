@@ -1,5 +1,9 @@
 import { Severity, ValidationContext, Issue } from '../../types';
 import { BaseRule } from './BaseRule';
+import * as path from 'path';
+import * as fs from 'fs';
+import { MulePaths } from './MulePaths';
+import {isChBgId} from './MulePaths'
 
 /**
  * ProjectRule - Base class for rules that operate at project level
@@ -69,5 +73,87 @@ export abstract class ProjectRule extends BaseRule {
       severity: options?.severity ?? this.severity,
       suggestion: options?.suggestion,
     };
+  }
+  protected getProjectArtifactIdFromPom(context: ValidationContext): string | null {
+    //get POM path from context
+    const pomPath = path.join(context.projectRoot, 'pom.xml');
+    if (!fs.existsSync(pomPath)) {
+      return null;
+    }
+    //read POM file
+    const content = fs.readFileSync(pomPath, 'utf-8');
+    // Remove XML comments to avoid matching commented sections
+    const noComments = content.replace(/<!--[\s\S]*?-->/g, '');
+
+    // Match <project>...</project> first (scopes search)
+    const projectMatch = noComments.match(/<project\b[\s\S]*?<\/project>/);
+    if (!projectMatch) return null;
+    const projectXml = projectMatch[0];
+    // Remove <parent>...</parent> block to avoid picking parent artifactId
+    const withoutParent = projectXml.replace(/<parent\b[\s\S]*?<\/parent>/, '');
+    // Now safely match the project's artifactId
+    const m = withoutParent.match(/<artifactId>\s*([^<\s]+)\s*<\/artifactId>/);
+    return m ? m[1].trim() : null;
+  }
+
+  protected getProjectGroupIdFromPom(context: ValidationContext): string | null {
+    //get POM path from context
+    const pomPath = path.join(context.projectRoot, 'pom.xml');
+    if (!fs.existsSync(pomPath)) {
+      return null;
+    }
+    //read POM file
+    const content = fs.readFileSync(pomPath, 'utf-8');
+    // Remove XML comments to avoid matching commented sections
+    const noComments = content.replace(/<!--[\s\S]*?-->/g, '');
+
+    // Match <project>...</project> first (scopes search)
+    const projectMatch = noComments.match(/<project\b[\s\S]*?<\/project>/);
+    if (!projectMatch) return null;
+    const projectXml = projectMatch[0];
+    // Remove <parent>...</parent> block to avoid picking parent artifactId
+    const withoutParent = projectXml.replace(/<parent\b[\s\S]*?<\/parent>/, '');
+    // Now safely match the project's groupId
+    const m = withoutParent.match(/<groupId>\s*([^<\s]+)\s*<\/groupId>/);
+    return m ? m[1].trim() : null;
+  }
+
+  protected getAppDeployPlatform(context: ValidationContext): string | null {
+    //get POM path from context
+    const pomPath = path.join(context.projectRoot, 'pom.xml');
+    if (!fs.existsSync(pomPath)) {
+      return null;
+    }
+    //read POM file
+    const content = fs.readFileSync(pomPath, 'utf-8');
+    // Remove XML comments to avoid matching commented sections
+    const noComments = content.replace(/<!--[\s\S]*?-->/g, '');
+    const projGroupId = this.getProjectGroupIdFromPom(context);
+    const awServer = this.readAwMuleServer(content);
+    const awPlatform = this.readAwMulePlatform(content);    
+    const Ch2BgIds= MulePaths.CH_BG_IDS;
+    
+    if (awPlatform != null && awPlatform.length > 0){
+      return awPlatform;
+    } else if (projGroupId != null && projGroupId.length > 0){
+        return isChBgId(projGroupId) ? 'cloudhub': null;
+    } else{ 
+        return null;
+    }    
+  }
+  protected readAwMuleServer(pomXml: string): string | null {
+    const match = pomXml.match(/<aw\.mule\.server>\s*([^<]+)\s*<\/aw\.mule\.server>/i);
+    return match?.[1]?.trim() ?? null;
+  }
+
+  protected readAwMulePlatform(pomXml: string): string | null {
+    const match = pomXml.match(/<aw\.mule\.platform>\s*([^<]+)\s*<\/aw\.mule\.platform>/i);
+    return match?.[1]?.trim() ?? null;
+  }
+  protected getParentArtifactId(pomXml: string): string | null {    
+    const match = pomXml.match(
+      /<parent>[\s\S]*?<artifactId>(.*?)<\/artifactId>[\s\S]*?<\/parent>/i
+    );
+    return match?.[1]?.trim() ?? null;
   }
 }

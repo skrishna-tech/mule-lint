@@ -190,5 +190,5 @@ export abstract class BaseRule implements Rule {
       severity: this.severity,
       options: {},
     };
-  }
+  } 
 }

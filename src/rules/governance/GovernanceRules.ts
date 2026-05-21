@@ -3,6 +3,7 @@ import { ProjectRule } from '../base/ProjectRule';
 import { getErrorMessage } from '../../core/errors';
 import * as fs from 'fs';
 import * as path from 'path';
+import { MulePaths } from '../base/MulePaths';
 
 /**
  * PROJ-001: POM Validation
@@ -18,7 +19,7 @@ export class PomValidationRule extends ProjectRule {
 
   validateProject(context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
-    const pomPath = path.join(context.projectRoot, 'pom.xml');
+    const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
 
     if (!fs.existsSync(pomPath)) {
       issues.push(
@@ -55,13 +56,22 @@ export class PomValidationRule extends ProjectRule {
           }),
         );
       }
+      //check for parent pom
+      if (!content.includes('parent')) {
+          issues.push(
+            this.createProjectIssue('Missing parent pom in pom.xml', {
+              severity: 'error',
+              suggestion: 'Add eai-base as parent pom for hybrid or eai-ch2-base for parent pom for cloudhub2.0 to use shared configurations',
+            }),
+          );
+        }
     } catch (error) {
       issues.push(
         this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
           severity: 'warning',
         }),
       );
-    }
+    }    
 
     return issues;
   }

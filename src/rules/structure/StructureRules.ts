@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ValidationContext, Issue } from '../../types';
 import { BaseRule } from '../base/BaseRule';
-
+import {MulePaths} from '../base/MulePaths';
 /**
  * MULE-802: Project Structure Validation
  *
@@ -21,10 +21,10 @@ export class ProjectStructureRule extends BaseRule {
   severity = 'warning' as const;
   category = 'structure' as const;
 
-  private readonly REQUIRED_DIRS = ['src/main/mule', 'src/main/resources'];
+  private readonly REQUIRED_DIRS = [MulePaths.SRC_MAIN_MULE, MulePaths.SRC_MAIN_RESOURCES];
 
   /** Default recommended dirs (api/ excluded — see class JSDoc) */
-  private readonly DEFAULT_RECOMMENDED_DIRS = ['src/main/resources/dwl', 'src/test/munit'];
+  private readonly DEFAULT_RECOMMENDED_DIRS = [MulePaths.DWL_PATH, MulePaths.MUNIT_DIR];
 
   validate(_doc: Document, context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
@@ -82,7 +82,7 @@ export class GlobalConfigRule extends BaseRule {
 
   validate(_doc: Document, context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
-    const muleDir = path.join(context.projectRoot, 'src/main/mule');
+    const muleDir = path.join(context.projectRoot, MulePaths.SRC_MAIN_MULE);
 
     if (!fs.existsSync(muleDir)) {
       return issues;

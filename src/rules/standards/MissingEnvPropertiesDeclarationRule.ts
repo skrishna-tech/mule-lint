@@ -23,7 +23,7 @@ export class MissingEnvPropertiesDeclarationRule extends ProjectRule {
   issueType: IssueType = 'bug';
 
   /** Required environments */
-  private readonly REQUIRED_ENVS = ['dev', 'prod'];
+  private readonly REQUIRED_ENVS = ['dev','stg','prod'];
 
   protected validateProject(context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
@@ -39,7 +39,7 @@ export class MissingEnvPropertiesDeclarationRule extends ProjectRule {
 
     // Check if any file looks like an env-parameterized name
     // Common patterns: dev.yaml, prod.yaml, local.yaml, sandbox.yaml
-    const envFilePattern = /^(dev|prod|local|sandbox|qa|staging|uat|sit)\.(yaml|yml)$/;
+    const envFilePattern = /^(dev|tst|stg|prd|local|munit)\.(yaml|yml)$/;
     const envFilesFound = yamlFiles
       .map((f) => path.basename(f))
       .filter((f) => envFilePattern.test(f));

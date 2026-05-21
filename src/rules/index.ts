@@ -1,6 +1,7 @@
 // Export base rules
 export * from './base/BaseRule';
 export * from './base/ProjectRule';
+export * from './base/MulePaths';
 
 // Import all rules - Error Handling
 import { GlobalErrorHandlerRule } from './error-handling/GlobalErrorHandlerRule';
@@ -43,12 +44,13 @@ import { ChoiceAntiPatternRule } from './standards/ChoiceAntiPatternRule';
 import { DwlStandardsRule } from './standards/DwlStandardsRule';
 import { DeprecatedComponentRule } from './standards/DeprecatedComponentRule';
 import { AutoDiscoveryRule } from './standards/AutoDiscoveryRule';
-import { HttpPortPlaceholderRule } from './standards/HttpPortPlaceholderRule';
-import { CronExternalizedRule } from './standards/CronExternalizedRule';
+import { HttpPortPlaceholderRule, HttpListenerValidationRule } from './standards/HttpPortPlaceholderRule';
+import { CronExternalizedRule, SchedulerPropertyRule } from './standards/CronExternalizedRule';
 import { ApiKitValidationRule } from './standards/ApiKitValidationRule';
 import { ConfigPropertiesOrderingRule } from './standards/ConfigPropertiesOrderingRule';
 import { MissingEnvPropertiesDeclarationRule } from './standards/MissingEnvPropertiesDeclarationRule';
 import { ApikitRouteVariableConsistencyRule } from './standards/ApikitRouteVariableConsistencyRule';
+import { AppDeployPlatformNotConfigured, MissingAwJSONLoggerRule, MissingAwErrorHandlingLibRule, Log4JNotModifiedRule, CH2SplunkLoggingNotEnabled, OrgAppNameRule, MissingCoreLoggingLibrary, IncorrectDistributionManagement } from './standards/MissingAWStandardComponents';
 
 // Import all rules - HTTP
 import { HttpUserAgentRule } from './http/HttpUserAgentRule';
@@ -142,6 +144,7 @@ export { LoggerInUntilSuccessfulRule } from './logging/LoggerInUntilSuccessfulRu
 export { ChoiceAntiPatternRule } from './standards/ChoiceAntiPatternRule';
 export { DwlStandardsRule } from './standards/DwlStandardsRule';
 export { DeprecatedComponentRule } from './standards/DeprecatedComponentRule';
+export { AppDeployPlatformNotConfigured, MissingAwJSONLoggerRule, MissingAwErrorHandlingLibRule, Log4JNotModifiedRule, CH2SplunkLoggingNotEnabled, OrgAppNameRule, MissingCoreLoggingLibrary, IncorrectDistributionManagement } from './standards/MissingAWStandardComponents';
 
 // Export individual rules - HTTP
 export { HttpUserAgentRule } from './http/HttpUserAgentRule';
@@ -156,7 +159,6 @@ export { MissingDocNameRule } from './documentation/MissingDocNameRule';
 export { ScatterGatherRoutesRule } from './performance/ScatterGatherRoutesRule';
 export { AsyncErrorHandlerRule } from './performance/AsyncErrorHandlerRule';
 export { LargeChoiceBlockRule } from './performance/LargeChoiceBlockRule';
-
 /**
  * All available rules - instantiated and ready to use
  * Total: 82 rules (including operations, resilience, hygiene, API-led, connector, and code quality rules)
@@ -196,8 +198,15 @@ export const ALL_RULES: Rule[] = [
   // Standards Rules (MULE-008, 010, 701)
   new ChoiceAntiPatternRule(),
   new DwlStandardsRule(),
-  new DeprecatedComponentRule(),
-
+  new DeprecatedComponentRule(),   
+  new MissingAwJSONLoggerRule(),
+  new MissingAwErrorHandlingLibRule(),
+  new Log4JNotModifiedRule(),
+  new CH2SplunkLoggingNotEnabled(),
+  new OrgAppNameRule(),
+  new MissingCoreLoggingLibrary(),
+  new IncorrectDistributionManagement(),
+  new AppDeployPlatformNotConfigured(),
   // HTTP Rules (MULE-401, 402, 403, HTTP-004)
   new HttpUserAgentRule(),
   new HttpContentTypeRule(),
@@ -248,12 +257,14 @@ export const ALL_RULES: Rule[] = [
   new ConnectorConfigNamingRule(),
   new MUnitCoverageRule(),
 
-  // Operations & Resilience Rules (RES-001, RES-002, OPS-001, OPS-002, OPS-003)
+  // Operations & Resilience Rules (RES-001, RES-002, OPS-001, OPS-002, OPS-003, OPS-004)
   new ReconnectionStrategyRule(),
   new ListenerReconnectForeverRule(), // RES-002: Listener Reconnect-Forever
   new AutoDiscoveryRule(),
   new HttpPortPlaceholderRule(),
+  new HttpListenerValidationRule(),
   new CronExternalizedRule(),
+  new SchedulerPropertyRule(),
 
   // Security Enhancement (SEC-006, SEC-007, SEC-008, SEC-009, SEC-010)
   new EncryptionKeyInLogsRule(),
@@ -278,7 +289,7 @@ export const ALL_RULES: Rule[] = [
 
   // Governance Rules (PROJ-001, PROJ-002)
   new PomValidationRule(),
-  new GitHygieneRule(),
+  new GitHygieneRule(),  
 
   // Connector Rules (SF-001, SF-002)
   new ReplayChannelConfigRule(), // SF-001: Salesforce Replay Channel Config

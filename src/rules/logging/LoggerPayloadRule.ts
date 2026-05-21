@@ -24,7 +24,7 @@ export class LoggerPayloadRule extends BaseRule {
   validate(doc: Document, _context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
 
-    // Check standard logger elements with message attribute
+    // Check standard logger elements with message attribute    
     const loggers = this.select('//*[local-name()="logger"]', doc);
     for (const logger of loggers) {
       const message = this.getAttribute(logger, 'message') ?? '';
@@ -74,7 +74,7 @@ export class LoggerPayloadRule extends BaseRule {
     }
 
     return issues;
-  }
+  } 
 
   private hasDirectPayloadReference(message: string): boolean {
     // Match #[payload] but not #[payload.something]

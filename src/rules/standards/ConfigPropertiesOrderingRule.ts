@@ -31,6 +31,8 @@ export class ConfigPropertiesOrderingRule extends BaseRule {
     'global.yaml',
     'global.properties',
     'common.yaml',
+    'config.yaml',
+    'configuration.yaml',
     'common.properties',
     'defaults.yaml',
     'defaults.properties',

@@ -4,7 +4,7 @@ import { ValidationContext, Issue, IssueType } from '../../types';
 import { BaseRule } from '../base/BaseRule';
 import { ProjectRule } from '../base/ProjectRule';
 import { YamlParser } from '../../core/YamlParser';
-
+import {MulePaths} from '../base/MulePaths';
 /**
  * YAML-001: Environment Properties Files
  *
@@ -23,10 +23,12 @@ export class EnvironmentFilesRule extends ProjectRule {
   protected validateProject(context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
 
-    const configDir = path.join(context.projectRoot, 'src/main/resources');
+    const configDir = path.join(context.projectRoot, MulePaths.YAML_CONFIG_PATH);
     const configSubDir = path.join(configDir, 'config');
     const propertiesDir = path.join(configDir, 'properties');
 
+    //getArtifactId
+    const muleAppName = this.getProjectArtifactIdFromPom(context);
     // Check all possible locations for property files
     const searchDirs = [configDir, configSubDir, propertiesDir].filter((d) => fs.existsSync(d));
 
@@ -34,7 +36,8 @@ export class EnvironmentFilesRule extends ProjectRule {
       return []; // No config directory found
     }
 
-    const requiredEnvs = this.getOption(context, 'environments', ['dev', 'qa', 'prod']);
+    //const requiredEnvs = this.getOption(context, 'environments', ['dev', 'tst', 'stg', 'prd']);
+    const requiredEnvs = this.getOption(context, 'environments', MulePaths.ENVIRONMENTS);
     const existingFiles = new Set<string>();
 
     for (const dir of searchDirs) {
@@ -48,16 +51,83 @@ export class EnvironmentFilesRule extends ProjectRule {
 
     for (const env of requiredEnvs) {
       const hasEnvFile =
-        existingFiles.has(`${env}.yaml`) ||
-        existingFiles.has(`${env}.yml`) ||
+        existingFiles.has(`config.yaml`) ||
+        existingFiles.has(`configuration.yml`) ||
         existingFiles.has(`config-${env}.yaml`) ||
         existingFiles.has(`config-${env}.yml`) ||
-        existingFiles.has(`${env}-properties.yaml`);
+        existingFiles.has(`${env}.${muleAppName}.yaml`);
 
       if (!hasEnvFile) {
         issues.push(
           this.createProjectIssue(`Missing environment properties file for "${env}"`, {
-            suggestion: `Create ${env}.yaml or config-${env}.yaml in src/main/resources/`,
+            suggestion: `Create ${env}.${muleAppName}.yaml or configuration.yaml in ${MulePaths.YAML_CONFIG_PATH}`,
+          }),
+        );
+      }
+    }
+
+    return issues;
+  }
+}
+
+/**
+ * YAML-002: Munit Properties is needed for CloudHub2.0 as per Andersen Standards
+ *
+ * Checks that munit environment-specific YAML files exist.
+ *
+ * This is a ProjectRule — it runs once per scan to avoid producing
+ * N identical issues (one per XML file).
+ */
+export class MunitEnvironmentFilesRule extends ProjectRule {
+  id = 'YAML-002';
+  name = 'Munit Environment Properties Files';
+  description = 'Environment-specific YAML property files for Munit should exist';
+  severity = 'warning' as const;
+  category = 'standards' as const;
+
+  protected validateProject(context: ValidationContext): Issue[] {
+    const issues: Issue[] = [];
+
+    const configDir = path.join(context.projectRoot, MulePaths.TEST_YAML_CONFIG_PATH);
+    const configSubDir = path.join(configDir, 'config');
+    const propertiesDir = path.join(configDir, 'properties');
+
+    // Check all possible locations for property files
+    const searchDirs = [configDir, configSubDir, propertiesDir].filter((d) => fs.existsSync(d));
+
+    if (searchDirs.length === 0) {
+      return []; // No config directory found
+    }
+    const muleAppName = this.getProjectArtifactIdFromPom(context);
+    const requiredEnvs = this.getOption(context, 'environments', MulePaths.MUNIT_ENV);
+    const existingFiles = new Set<string>();
+    
+    for (const dir of searchDirs) {
+      try {
+        const files = fs.readdirSync(dir);
+        //files.forEach((f) => existingFiles.add(f.toLowerCase()));        
+        files.forEach((f) => {
+          console.log(`Processing file: ${f}`);
+          existingFiles.add(f.toLowerCase());
+        });
+      } catch {
+        // Directory not readable
+        console.error(`Directory not reachable: ${dir}`)
+      }
+    }
+
+    for (const env of requiredEnvs) {
+      const hasEnvFile =
+        existingFiles.has(`config.yaml`) ||
+        existingFiles.has(`configuration.yml`) ||
+        existingFiles.has(`config-${env}.yaml`) ||
+        existingFiles.has(`config-${env}.yml`) ||
+        existingFiles.has(`${env}.${muleAppName}.yaml`);
+
+      if (!hasEnvFile) {
+        issues.push(
+          this.createProjectIssue(`Missing environment properties file for "${env}"`, {
+            suggestion: `Create ${env}.${muleAppName}.yaml or configuration.yaml in ${MulePaths.TEST_YAML_CONFIG_PATH}`,
           }),
         );
       }
@@ -82,7 +152,7 @@ export class PropertyNamingRule extends BaseRule {
   validate(_doc: Document, context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
 
-    const configDir = path.join(context.projectRoot, 'src/main/resources');
+    const configDir = path.join(context.projectRoot, MulePaths.YAML_CONFIG_PATH);
     const yamlFiles = this.findYamlFiles(configDir);
 
     for (const yamlFile of yamlFiles) {
@@ -163,7 +233,7 @@ export class PlaintextSecretsRule extends BaseRule {
   validate(_doc: Document, context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
 
-    const configDir = path.join(context.projectRoot, 'src/main/resources');
+    const configDir = path.join(context.projectRoot, MulePaths.YAML_CONFIG_PATH);
     const yamlFiles = this.findYamlFiles(configDir);
 
     for (const yamlFile of yamlFiles) {
