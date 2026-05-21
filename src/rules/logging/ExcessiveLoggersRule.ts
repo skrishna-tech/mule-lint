@@ -16,7 +16,7 @@ export class ExcessiveLoggersRule extends BaseRule {
   validate(doc: Document, context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
 
-    const maxLoggers = this.getOption(context, 'maxLoggers', 5);
+    const maxLoggers = this.getOption(context, 'maxLoggers', 20);
 
     // Check flows
     const flows = this.select('//*[local-name()="flow"]', doc);

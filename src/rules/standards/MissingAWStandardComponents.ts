@@ -41,6 +41,7 @@ export class AppDeployPlatformNotConfigured extends ProjectRule {
             `pom.xml is not configured properly to deploy in Cloudhub or hybrid enviroment.`,
             {
               severity: 'error',
+              suggestion: 'configure pom.xml as per Confluence documentation for Cloudhub or Hybrid environment.'
             },
           ),
         );
@@ -184,15 +185,15 @@ export class MissingAwJSONLoggerRule extends ProjectRule {
       const ch2ErrMsg =
         'add depdendency <dependency><groupId>09d89140-dc6e-4bac-ad5d-f55fc59af462</groupId><artifactId>aw-json-logger</artifactId><version>4.5.0</version><classifier>mule-plugin</classifier></dependency>';
       // Check for mule-maven-plugin
+      
       if (!content.includes('aw-json-logger')) {
         issues.push(
           this.createProjectIssue('Missing aw-json-logger dependency in pom.xml', {
             severity: 'error',
             suggestion:
-              appDeployPlatform != undefined &&
-              (appDeployPlatform == 'onprem' || appDeployPlatform == 'azcloud')
-                ? hybridErrMsg
-                : ch2ErrMsg,
+              (appDeployPlatform != undefined &&  (appDeployPlatform == 'onprem' || appDeployPlatform == 'azcloud'))
+              ? hybridErrMsg :
+              (isCloudhubApp != undefined &&  isCloudhubApp == 'Yes') ? ch2ErrMsg : '',
           }),
         );
       }
@@ -232,7 +233,8 @@ export class MissingAwErrorHandlingLibRule extends ProjectRule {
     }
     try {
       const content = fs.readFileSync(pomPath, 'utf-8');
-      const appDeployPlatform = this.getAppDeployPlatform(context);
+      const appDeployPlatform = PomValues.getAppPlatform(pomPath);
+      const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
       const hybridErrMsg =
         'add dependency <dependency><groupId>com.andersen.eai</groupId><artifactId>eai-core-error-handling-lib</artifactId><version>2.3.0</version><classifier>mule-plugin</classifier></dependency>';
       const ch2ErrMsg =
@@ -242,7 +244,10 @@ export class MissingAwErrorHandlingLibRule extends ProjectRule {
         issues.push(
           this.createProjectIssue('Missing eai-core-error-handling-lib dependency in pom.xml', {
             severity: 'error',
-            suggestion: appDeployPlatform == 'hybrid' ? hybridErrMsg : ch2ErrMsg,
+            suggestion:
+              (appDeployPlatform != undefined &&  (appDeployPlatform == 'onprem' || appDeployPlatform == 'azcloud'))
+              ? hybridErrMsg :
+              (isCloudhubApp != undefined &&  isCloudhubApp == 'Yes') ? ch2ErrMsg : '',
           }),
         );
       }
@@ -282,11 +287,11 @@ export class MissingCoreLoggingLibrary extends ProjectRule {
     }
     try {
       const content = fs.readFileSync(pomPath, 'utf-8');
-      const appDeployPlatform = this.getAppDeployPlatform(context);
+      const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
       const ch2ErrMsg =
         'add depdendency <dependency><groupId>com.andersen.eai</groupId><artifactId>eai-core-logging-lib</artifactId><version>1.0.0-SNAPSHOT</version></dependency>';
       // Check for mule-maven-plugin
-      if (appDeployPlatform == 'cloudhub' && !content.includes('eai-core-logging-lib')) {
+      if (isCloudhubApp != undefined && isCloudhubApp == 'Yes' && !content.includes('eai-core-logging-lib')) {
         issues.push(
           this.createProjectIssue('Missing eai-core-logging-lib dependency in pom.xml', {
             severity: 'info',
@@ -318,6 +323,7 @@ export class Log4JNotModifiedRule extends ProjectRule {
   issueType: IssueType = 'bug';
   protected validateProject(context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
+    const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
     // projectRoot should exist in context (engine scans project)
     const log4j2Path = path.join(context.projectRoot, MulePaths.LOG4J2_XML);
     if (!fs.existsSync(log4j2Path)) {
@@ -330,11 +336,10 @@ export class Log4JNotModifiedRule extends ProjectRule {
     }
     try {
       const content = fs.readFileSync(log4j2Path, 'utf-8');
-      const appDeployPlatform = this.getAppDeployPlatform(context);
-
+      const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
       if (
-        appDeployPlatform != null &&
-        appDeployPlatform == 'cloudhub' &&
+        isCloudhubApp != undefined &&
+        isCloudhubApp == 'Yes' &&
         content.includes('mule.log.path')
       ) {
         issues.push(
