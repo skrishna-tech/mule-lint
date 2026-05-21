@@ -23,7 +23,7 @@ export class MissingEnvPropertiesDeclarationRule extends ProjectRule {
   issueType: IssueType = 'bug';
 
   /** Required environments */
-  private readonly REQUIRED_ENVS = ['dev','stg','prod'];
+  private readonly REQUIRED_ENVS = ['dev', 'stg', 'prod'];
 
   protected validateProject(context: ValidationContext): Issue[] {
     const issues: Issue[] = [];

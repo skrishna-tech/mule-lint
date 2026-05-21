@@ -1,7 +1,7 @@
 // PomValues.ts
-import { PomHelper, PomInfo, DistributionManagement, MavenPlugin } from "../../core/PomHelper";
+import { PomHelper, PomInfo, DistributionManagement, MavenPlugin } from '../../core/PomHelper';
 import { MulePaths } from './MulePaths';
-import {isChBgId} from './MulePaths'
+import { isChBgId } from './MulePaths';
 export type PomValuesOptions = {
   /** default: true */
   resolvePlaceholders?: boolean;
@@ -42,17 +42,17 @@ export class PomValues {
   }
 
   static getAppPlatform(pomPath: string, options?: PomValuesOptions): string | undefined {
-    const appPlatform = this.readPom(pomPath, options).properties["aw.mule.platform"];
+    const appPlatform = this.readPom(pomPath, options).properties['aw.mule.platform'];
     return appPlatform;
   }
 
   static isCloudHubApp(pomPath: string, options?: PomValuesOptions): string | undefined {
-    const Ch2BgIds= MulePaths.CH_BG_IDS;
+    const Ch2BgIds = MulePaths.CH_BG_IDS;
     const groupId = this.readPom(pomPath, options).groupId;
-    if (groupId != null && groupId.length > 0){
-        return isChBgId(groupId)? 'Yes': 'No';
+    if (groupId != null && groupId.length > 0) {
+      return isChBgId(groupId) ? 'Yes' : 'No';
     } else {
-        return 'No';
+      return 'No';
     }
   }
 
@@ -62,7 +62,7 @@ export class PomValues {
 
   static getDistributionManagement(
     pomPath: string,
-    options?: PomValuesOptions
+    options?: PomValuesOptions,
   ): DistributionManagement | undefined {
     return this.readPom(pomPath, options).distributionManagement;
   }
@@ -88,7 +88,7 @@ export class PomValues {
    */
   static getDistributionRepoIds(
     pomPath: string,
-    options?: PomValuesOptions
+    options?: PomValuesOptions,
   ): { releaseRepoId?: string; snapshotRepoId?: string } {
     const dm = this.getDistributionManagement(pomPath, options);
     return {
@@ -109,7 +109,7 @@ export class PomValues {
 
   static requireDistributionRepoIds(
     pomPath: string,
-    options?: PomValuesOptions
+    options?: PomValuesOptions,
   ): { releaseRepoId?: string; snapshotRepoId?: string } {
     const ids = this.getDistributionRepoIds(pomPath, options);
     if (!ids.releaseRepoId && !ids.snapshotRepoId) {

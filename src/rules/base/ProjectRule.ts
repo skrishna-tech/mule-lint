@@ -3,7 +3,7 @@ import { BaseRule } from './BaseRule';
 import * as path from 'path';
 import * as fs from 'fs';
 import { MulePaths } from './MulePaths';
-import {isChBgId} from './MulePaths'
+import { isChBgId } from './MulePaths';
 
 /**
  * ProjectRule - Base class for rules that operate at project level
@@ -130,16 +130,16 @@ export abstract class ProjectRule extends BaseRule {
     const noComments = content.replace(/<!--[\s\S]*?-->/g, '');
     const projGroupId = this.getProjectGroupIdFromPom(context);
     const awServer = this.readAwMuleServer(content);
-    const awPlatform = this.readAwMulePlatform(content);    
-    const Ch2BgIds= MulePaths.CH_BG_IDS;
-    
-    if (awPlatform != null && awPlatform.length > 0){
+    const awPlatform = this.readAwMulePlatform(content);
+    const Ch2BgIds = MulePaths.CH_BG_IDS;
+
+    if (awPlatform != null && awPlatform.length > 0) {
       return awPlatform;
-    } else if (projGroupId != null && projGroupId.length > 0){
-        return isChBgId(projGroupId) ? 'cloudhub': null;
-    } else{ 
-        return null;
-    }    
+    } else if (projGroupId != null && projGroupId.length > 0) {
+      return isChBgId(projGroupId) ? 'cloudhub' : null;
+    } else {
+      return null;
+    }
   }
   protected readAwMuleServer(pomXml: string): string | null {
     const match = pomXml.match(/<aw\.mule\.server>\s*([^<]+)\s*<\/aw\.mule\.server>/i);
@@ -150,9 +150,9 @@ export abstract class ProjectRule extends BaseRule {
     const match = pomXml.match(/<aw\.mule\.platform>\s*([^<]+)\s*<\/aw\.mule\.platform>/i);
     return match?.[1]?.trim() ?? null;
   }
-  protected getParentArtifactId(pomXml: string): string | null {    
+  protected getParentArtifactId(pomXml: string): string | null {
     const match = pomXml.match(
-      /<parent>[\s\S]*?<artifactId>(.*?)<\/artifactId>[\s\S]*?<\/parent>/i
+      /<parent>[\s\S]*?<artifactId>(.*?)<\/artifactId>[\s\S]*?<\/parent>/i,
     );
     return match?.[1]?.trim() ?? null;
   }

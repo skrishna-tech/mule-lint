@@ -2,7 +2,7 @@ import { ValidationContext, Issue, IssueType } from '../../types';
 import { ProjectRule } from '../base/ProjectRule';
 import { MulePaths } from '../base/MulePaths';
 import { getErrorMessage } from '../../core/errors';
-import { XMLParser } from "fast-xml-parser";
+import { PomValues } from '../base/PomValues';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -23,29 +23,28 @@ export class AppDeployPlatformNotConfigured extends ProjectRule {
     // projectRoot should exist in context (engine scans project)
     const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
     // Basic content check (simple string matching to avoid heavy XML parsing dependency if not needed)
     // In a real implementation, we might want to parse the XML, but for now string matching is faster/sufficient
     // for these specific checks.
-    try{
-        const content = fs.readFileSync(pomPath, 'utf-8');
-        //read artifactId        
-        const artifactId = this.getProjectArtifactIdFromPom(context);
-        //console.log(`artifactId: ${artifactId}`);
-        const appPlatform = this.getAppDeployPlatform(context);
-        //console.log(`appPlatform: ${appPlatform}`);
-        if (appPlatform == null){
-            issues.push(
-            this.createProjectIssue(`pom.xml is not configured properly to deploy in Cloudhub or hybrid enviroment.`, {
-            severity: 'error',          
-          }));
-        }
+    try {
+      const appPlatform = PomValues.getAppPlatform(pomPath);
+      if (appPlatform == undefined || appPlatform == null) {
+        issues.push(
+          this.createProjectIssue(
+            `pom.xml is not configured properly to deploy in Cloudhub or hybrid enviroment.`,
+            {
+              severity: 'error',
+            },
+          ),
+        );
+      }
     } catch (error) {
       issues.push(
         this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
@@ -54,7 +53,7 @@ export class AppDeployPlatformNotConfigured extends ProjectRule {
       );
     }
     return issues;
-  }  
+  }
 }
 
 /**
@@ -64,7 +63,8 @@ export class AppDeployPlatformNotConfigured extends ProjectRule {
 export class OrgAppNameRule extends ProjectRule {
   id = 'AWSTND-002';
   name = 'App Name Convention';
-  description = 'App name (pom.xml artifactId) must be lowercase, use a-z0-9 and dashes only, and be < 42 characters for hybird and <38 characters for cloudhub';
+  description =
+    'App name (pom.xml artifactId) must be lowercase, use a-z0-9 and dashes only, and be < 42 characters for hybird and <38 characters for cloudhub';
   severity = 'error' as const;
   category = 'standards' as const;
   issueType: IssueType = 'bug';
@@ -74,56 +74,72 @@ export class OrgAppNameRule extends ProjectRule {
     // projectRoot should exist in context (engine scans project)
     const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
     // Basic content check (simple string matching to avoid heavy XML parsing dependency if not needed)
     // In a real implementation, we might want to parse the XML, but for now string matching is faster/sufficient
     // for these specific checks.
-    try{
-        const content = fs.readFileSync(pomPath, 'utf-8');
-        //read artifactId        
-        const artifactId = this.getProjectArtifactIdFromPom(context);
-        //console.log(`artifactId: ${artifactId}`);
-        const appPlatform = this.getAppDeployPlatform(context);
-        //console.log(`appPlatform: ${appPlatform}`);        
-        const pattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-        if (artifactId != null && !pattern.test(artifactId)){
-            issues.push(
-            this.createProjectIssue(`artifactId "${artifactId}" must match ${pattern} (lowercase, a-z0-9 and dashes only)`, {
-            severity: 'error',          
-          }));
-        }        
-        if (appPlatform != null && appPlatform == "cloudhub") {
-          const maxLen = 38;
-          if (artifactId != null && artifactId.length > maxLen) {
+    try {
+      const artifactId = PomValues.getArtifactId(pomPath);
+      const appPlatform = PomValues.getAppPlatform(pomPath);
+      const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
+      const pattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+      if (artifactId != null && artifactId != undefined && !pattern.test(artifactId)) {
+        issues.push(
+          this.createProjectIssue(
+            `artifactId "${artifactId}" must match ${pattern} (lowercase, a-z0-9 and dashes only)`,
+            {
+              severity: 'error',
+            },
+          ),
+        );
+      }
+      if (isCloudhubApp != null && isCloudhubApp != undefined && isCloudhubApp == 'Yes') {
+        const maxLen = 38;
+        if (artifactId != null && artifactId != undefined && artifactId.length > maxLen) {
           issues.push(
-              this.createProjectIssue(`artifactId "${artifactId}" is too long (${artifactId.length}). Must be <38 characters.`, {
-              severity: 'error',          
-            }));
-          }
-        } else if (appPlatform != null && (appPlatform == "hybrid" || appPlatform == "azcloud" || appPlatform == "onprem")) {
-          const maxLen = 41;
-          if (artifactId != null && artifactId.length > maxLen) {
-          issues.push(
-              this.createProjectIssue(`artifactId "${artifactId}" is too long (${artifactId.length}). Must be <42 characters.`, {
-              severity: 'error',          
-            }));
-          }
-        } else {
-          const maxLen = 38;
-          if (artifactId != null && artifactId.length > maxLen) {
-          issues.push(
-              this.createProjectIssue(`artifactId "${artifactId}" is too long (${artifactId.length}). Must be <38 characters for CloudHub and <42 characters for hybird environment.`, {
-              severity: 'error',          
-            }));
-          }
+            this.createProjectIssue(
+              `artifactId "${artifactId}" is too long (${artifactId.length}). Must be <38 characters.`,
+              {
+                severity: 'error',
+              },
+            ),
+          );
         }
-        
+      } else if (
+        appPlatform != null &&
+        artifactId != undefined &&
+        (appPlatform == 'hybrid' || appPlatform == 'azcloud' || appPlatform == 'onprem')
+      ) {
+        const maxLen = 41;
+        if (artifactId != null && artifactId != undefined && artifactId.length > maxLen) {
+          issues.push(
+            this.createProjectIssue(
+              `artifactId "${artifactId}" is too long (${artifactId.length}). Must be <42 characters.`,
+              {
+                severity: 'error',
+              },
+            ),
+          );
+        }
+      } else {
+        const maxLen = 38;
+        if (artifactId != null && artifactId != undefined && artifactId.length > maxLen) {
+          issues.push(
+            this.createProjectIssue(
+              `artifactId "${artifactId}" is too long (${artifactId.length}). Must be <38 characters for CloudHub and <42 characters for hybird environment.`,
+              {
+                severity: 'error',
+              },
+            ),
+          );
+        }
+      }
     } catch (error) {
       issues.push(
         this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
@@ -133,12 +149,12 @@ export class OrgAppNameRule extends ProjectRule {
     }
 
     return issues;
-  }  
+  }
 }
 
 /**
  * AWSTND-003: Missing AW JSON Logger dependency
- * Missing Andersen Corporation standard AW JSON Logger dependency 
+ * Missing Andersen Corporation standard AW JSON Logger dependency
  */
 export class MissingAwJSONLoggerRule extends ProjectRule {
   id = 'AWSTND-003';
@@ -152,33 +168,40 @@ export class MissingAwJSONLoggerRule extends ProjectRule {
     // projectRoot should exist in context (engine scans project)
     const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
-    try{
-        const content = fs.readFileSync(pomPath, 'utf-8');
-        const appDeployPlatform = this.getAppDeployPlatform(context);
-        const hybridErrMsg = "add dependency <dependency><groupId>com.andersen.eai</groupId><artifactId>aw-json-logger</artifactId><version>4.0.0</version><classifier>mule-plugin</classifier></dependency>";
-        const ch2ErrMsg = "add depdendency <dependency><groupId>09d89140-dc6e-4bac-ad5d-f55fc59af462</groupId><artifactId>aw-json-logger</artifactId><version>4.5.0</version><classifier>mule-plugin</classifier></dependency>";
-        // Check for mule-maven-plugin
-        if (!content.includes('aw-json-logger')) {
-            issues.push(
-            this.createProjectIssue('Missing aw-json-logger dependency in pom.xml', {
-                severity: 'error',
-                suggestion: appDeployPlatform == "hybrid" ? hybridErrMsg : ch2ErrMsg,
-            }),
-            );
-        }
-    }catch (error) {
+    try {
+      const content = fs.readFileSync(pomPath, 'utf-8');
+      const appDeployPlatform = PomValues.getAppPlatform(pomPath);
+      const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
+      const hybridErrMsg =
+        'add dependency <dependency><groupId>com.andersen.eai</groupId><artifactId>aw-json-logger</artifactId><version>4.0.0</version><classifier>mule-plugin</classifier></dependency>';
+      const ch2ErrMsg =
+        'add depdendency <dependency><groupId>09d89140-dc6e-4bac-ad5d-f55fc59af462</groupId><artifactId>aw-json-logger</artifactId><version>4.5.0</version><classifier>mule-plugin</classifier></dependency>';
+      // Check for mule-maven-plugin
+      if (!content.includes('aw-json-logger')) {
         issues.push(
-        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
+          this.createProjectIssue('Missing aw-json-logger dependency in pom.xml', {
             severity: 'error',
-        }),
+            suggestion:
+              appDeployPlatform != undefined &&
+              (appDeployPlatform == 'onprem' || appDeployPlatform == 'azcloud')
+                ? hybridErrMsg
+                : ch2ErrMsg,
+          }),
         );
+      }
+    } catch (error) {
+      issues.push(
+        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
+          severity: 'error',
+        }),
+      );
     }
     return issues;
   }
@@ -200,36 +223,35 @@ export class MissingAwErrorHandlingLibRule extends ProjectRule {
     // projectRoot should exist in context (engine scans project)
     const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
-    try{
-        const content = fs.readFileSync(pomPath, 'utf-8');
-        const appDeployPlatform = this.getAppDeployPlatform(context);
-        const hybridErrMsg = "add dependency <dependency><groupId>com.andersen.eai</groupId><artifactId>eai-core-error-handling-lib</artifactId><version>2.3.0</version><classifier>mule-plugin</classifier></dependency>";
-        const ch2ErrMsg = "add depdendency <dependency><groupId>09d89140-dc6e-4bac-ad5d-f55fc59af462</groupId><artifactId>eai-core-error-handling-lib</artifactId><version>3.0.1</version><classifier>mule-plugin</classifier></dependency>";
-        // Check for mule-maven-plugin
-        if (!content.includes('eai-core-error-handling-lib')) {
-            issues.push(
-            this.createProjectIssue('Missing eai-core-error-handling-lib dependency in pom.xml', {
-                severity: 'error',
-                suggestion: 
-                    appDeployPlatform == "hybrid"
-                        ? hybridErrMsg
-                        : ch2ErrMsg
-            }),
-            );
-        }
-    }catch (error) {
+    try {
+      const content = fs.readFileSync(pomPath, 'utf-8');
+      const appDeployPlatform = this.getAppDeployPlatform(context);
+      const hybridErrMsg =
+        'add dependency <dependency><groupId>com.andersen.eai</groupId><artifactId>eai-core-error-handling-lib</artifactId><version>2.3.0</version><classifier>mule-plugin</classifier></dependency>';
+      const ch2ErrMsg =
+        'add depdendency <dependency><groupId>09d89140-dc6e-4bac-ad5d-f55fc59af462</groupId><artifactId>eai-core-error-handling-lib</artifactId><version>3.0.1</version><classifier>mule-plugin</classifier></dependency>';
+      // Check for mule-maven-plugin
+      if (!content.includes('eai-core-error-handling-lib')) {
         issues.push(
-        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
+          this.createProjectIssue('Missing eai-core-error-handling-lib dependency in pom.xml', {
             severity: 'error',
-        }),
+            suggestion: appDeployPlatform == 'hybrid' ? hybridErrMsg : ch2ErrMsg,
+          }),
         );
+      }
+    } catch (error) {
+      issues.push(
+        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
+          severity: 'error',
+        }),
+      );
     }
     return issues;
   }
@@ -245,38 +267,39 @@ export class MissingCoreLoggingLibrary extends ProjectRule {
   description = 'Missing EAI Core logging library dependency for request response logging';
   severity = 'info' as const;
   category = 'standards' as const;
-  
+
   protected validateProject(context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
     // projectRoot should exist in context (engine scans project)
     const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
-    try{
-        const content = fs.readFileSync(pomPath, 'utf-8');
-        const appDeployPlatform = this.getAppDeployPlatform(context);
-        const ch2ErrMsg = "add depdendency <dependency><groupId>com.andersen.eai</groupId><artifactId>eai-core-logging-lib</artifactId><version>1.0.0-SNAPSHOT</version></dependency>";
-        // Check for mule-maven-plugin
-        if (appDeployPlatform == "cloudhub" && !content.includes('eai-core-logging-lib')) {
-            issues.push(
-            this.createProjectIssue('Missing eai-core-logging-lib dependency in pom.xml', {
-                severity: 'info',
-                suggestion: ch2ErrMsg
-            }),
-            );
-        }
-    }catch (error) {
+    try {
+      const content = fs.readFileSync(pomPath, 'utf-8');
+      const appDeployPlatform = this.getAppDeployPlatform(context);
+      const ch2ErrMsg =
+        'add depdendency <dependency><groupId>com.andersen.eai</groupId><artifactId>eai-core-logging-lib</artifactId><version>1.0.0-SNAPSHOT</version></dependency>';
+      // Check for mule-maven-plugin
+      if (appDeployPlatform == 'cloudhub' && !content.includes('eai-core-logging-lib')) {
         issues.push(
-        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
-            severity: 'error',
-        }),
+          this.createProjectIssue('Missing eai-core-logging-lib dependency in pom.xml', {
+            severity: 'info',
+            suggestion: ch2ErrMsg,
+          }),
         );
+      }
+    } catch (error) {
+      issues.push(
+        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
+          severity: 'error',
+        }),
+      );
     }
     return issues;
   }
@@ -298,41 +321,55 @@ export class Log4JNotModifiedRule extends ProjectRule {
     // projectRoot should exist in context (engine scans project)
     const log4j2Path = path.join(context.projectRoot, MulePaths.LOG4J2_XML);
     if (!fs.existsSync(log4j2Path)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing log4j2.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
-    try{
-        const content = fs.readFileSync(log4j2Path, 'utf-8');
-        const appDeployPlatform = this.getAppDeployPlatform(context);
+    try {
+      const content = fs.readFileSync(log4j2Path, 'utf-8');
+      const appDeployPlatform = this.getAppDeployPlatform(context);
 
-        if (appDeployPlatform != null && appDeployPlatform == "cloudhub" && content.includes('mule.log.path')) {
-            issues.push(
-            this.createProjectIssue('logj4j2.xml should be reset to default and should not have custom paths.', {
-                severity: 'error',
-                suggestion: "Default log4j2.xml is modified, change fileName to change to sys:mule.home and filePattern as well",
-            }),
-            );
-        }
-        
-        // Check for mule-maven-plugin
-        if (!content.includes('mule.log.path') && (appDeployPlatform == "hybrid" || appDeployPlatform == "onprem" || appDeployPlatform == "azcloud")) {
-            issues.push(
-            this.createProjectIssue('Default log4j2.xml is not modified.', {
-                severity: 'error',
-                suggestion: "Default log4j2.xml is not modified, change fileName to change to sys:mule.log.path and filePattern as well",
-            }),
-            );
-        }
-    }catch (error) {
+      if (
+        appDeployPlatform != null &&
+        appDeployPlatform == 'cloudhub' &&
+        content.includes('mule.log.path')
+      ) {
         issues.push(
-        this.createProjectIssue(`Error reading log4j2.xml: ${getErrorMessage(error)}`, {
-            severity: 'error',
-        }),
+          this.createProjectIssue(
+            'logj4j2.xml should be reset to default and should not have custom paths.',
+            {
+              severity: 'error',
+              suggestion:
+                'Default log4j2.xml is modified, change fileName to change to sys:mule.home and filePattern as well',
+            },
+          ),
         );
+      }
+
+      // Check for mule-maven-plugin
+      if (
+        !content.includes('mule.log.path') &&
+        (appDeployPlatform == 'hybrid' ||
+          appDeployPlatform == 'onprem' ||
+          appDeployPlatform == 'azcloud')
+      ) {
+        issues.push(
+          this.createProjectIssue('Default log4j2.xml is not modified.', {
+            severity: 'error',
+            suggestion:
+              'Default log4j2.xml is not modified, change fileName to change to sys:mule.log.path and filePattern as well',
+          }),
+        );
+      }
+    } catch (error) {
+      issues.push(
+        this.createProjectIssue(`Error reading log4j2.xml: ${getErrorMessage(error)}`, {
+          severity: 'error',
+        }),
+      );
     }
     return issues;
   }
@@ -354,111 +391,89 @@ export class CH2SplunkLoggingNotEnabled extends ProjectRule {
     // projectRoot should exist in context (engine scans project)
     const log4j2Path = path.join(context.projectRoot, MulePaths.LOG4J2_XML);
     if (!fs.existsSync(log4j2Path)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing log4j2.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
-    try{
-        const content = fs.readFileSync(log4j2Path, 'utf-8');
-        const appDeployPlatform = this.getAppDeployPlatform(context);
-
-        if (appDeployPlatform != null && appDeployPlatform == "cloudhub" && !content.includes('SplunkHttp')) {
-            issues.push(
-            this.createProjectIssue('log4j2.xml is not modified to send the logs to Splunk via HTTP', {
-                severity: 'warning',
-                suggestion: "Configure SplunkHttp in cloudhub app, refer Cloudhub2.0 playbook from Confluence",
-            }),
-            );
-        }        
-    }catch (error) {
+    try {
+      const content = fs.readFileSync(log4j2Path, 'utf-8');
+      const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
+      const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
+      if (isCloudhubApp != undefined && isCloudhubApp == 'Yes' && !content.includes('SplunkHttp')) {
         issues.push(
-        this.createProjectIssue(`Error reading log4j2.xml: ${getErrorMessage(error)}`, {
-            severity: 'error',
-        }),
+          this.createProjectIssue(
+            'log4j2.xml is not modified to send the logs to Splunk via HTTP',
+            {
+              severity: 'warning',
+              suggestion:
+                'Configure SplunkHttp in cloudhub app, refer Cloudhub2.0 playbook from Confluence',
+            },
+          ),
         );
+      }
+    } catch (error) {
+      issues.push(
+        this.createProjectIssue(`Error reading log4j2.xml: ${getErrorMessage(error)}`, {
+          severity: 'error',
+        }),
+      );
     }
     return issues;
-  }  
+  }
 }
 
 /**
- * AWSTND-008: Missing or incorrect distribution management
- * Incorrect repository urls for distribution management
+ * AWSTND-008: Missing or incorrect distribution management for Cloudhub2.0
+ * Incorrect repository urls for distribution management for Cloudhub2.0
  */
 export class IncorrectDistributionManagement extends ProjectRule {
   id = 'AWSTND-008';
-  name = 'Missing or incorrect distribution management';
-  description = 'Incorrect repository urls for distribution management';
+  name = 'Missing or incorrect distribution management for Cloudhub2.0';
+  description = 'Incorrect repository urls for distribution management for Cloudhub2.0';
   severity = 'error' as const;
   category = 'standards' as const;
-  
+
   protected validateProject(context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
     // projectRoot should exist in context (engine scans project)
     const pomPath = path.join(context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createProjectIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
+      );
+      return issues;
     }
-    try{
-        const content = fs.readFileSync(pomPath, 'utf-8');
-        const appDeployPlatform = this.getAppDeployPlatform(context);
-        const distRepoIds = this.getDistMgmtIds(content);
-        //console.log(`distExists: ${distRepoIds.exists}`);
-        //console.log(`repoId: ${distRepoIds.repositoryId}`);
-        //console.log(`snapshotRepositoryId: ${distRepoIds.snapshotRepositoryId}`);
-        const ch2ErrMsg = "Use Parent POM or update the correct values in distribution management as per confluence CH2 playbook";
-        // Check for mule-maven-plugin
-        if (appDeployPlatform == "cloudhub" && distRepoIds.exists == true && distRepoIds.repositoryId == undefined || (distRepoIds.repositoryId != undefined && !distRepoIds.repositoryId.includes('release.repo.id'))) {
-            issues.push(
-            this.createProjectIssue('Missing distribution management repository Ids in pom.xml', {
-                severity: 'info',
-                suggestion: ch2ErrMsg
-            }),
-            );
-        }
-    }catch (error) {
+    try {
+      const content = fs.readFileSync(pomPath, 'utf-8');
+      const releaseRepoId = PomValues.getReleaseRepoId(pomPath);
+      const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
+      const ch2ErrMsg =
+        'Use Parent POM or update the correct values in distribution management as per confluence CH2 playbook';
+      if (
+        isCloudhubApp != undefined &&
+        isCloudhubApp == 'Yes' &&
+        releaseRepoId != undefined &&
+        !releaseRepoId.includes('release.repo.id')
+      ) {
         issues.push(
-        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
-            severity: 'error',
-        }),
+          this.createProjectIssue('Missing distribution management repository Ids in pom.xml', {
+            severity: 'info',
+            suggestion: ch2ErrMsg,
+          }),
         );
+      }
+    } catch (error) {
+      issues.push(
+        this.createProjectIssue(`Error reading pom.xml: ${getErrorMessage(error)}`, {
+          severity: 'error',
+        }),
+      );
     }
     return issues;
-  }
-  protected getDistMgmtIds(pomXml: string): {
-    exists: boolean,
-    repositoryId?: string;
-    snapshotRepositoryId?: string;
-    }{
-        const parser = new XMLParser({ ignoreAttributes: false });
-        const doc = parser.parse(pomXml);
-        const project = doc?.project ?? doc;
-        const distMgmt = project?.distributionManagement;
-        if (!distMgmt) return { exists: false };
-        const repositoryId = this.normalizeLeaf(distMgmt?.repository?.id);
-        const snapshotRepositoryId = this.normalizeLeaf(distMgmt?.snapshotRepository?.id);
-        return {
-            exists: true,
-            repositoryId: repositoryId || undefined,
-            snapshotRepositoryId: snapshotRepositoryId || undefined
-        };
-  }
-  protected normalizeLeaf(v: any): string {
-    if (v == null) return "";
-    if (Array.isArray(v)) return String(v[0] ?? "").trim();
-    if (typeof v === "object") {
-        // some parsers use "#text"
-        if (typeof v["#text"] === "string") return v["#text"].trim();
-        return "";
-    }
-    return String(v).trim();
   }
 }

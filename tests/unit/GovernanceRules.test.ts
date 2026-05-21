@@ -1,4 +1,8 @@
-import { PomValidationRule, GitHygieneRule, OrgAppNameRule } from '../../src/rules/governance/GovernanceRules';
+import {
+  PomValidationRule,
+  GitHygieneRule,
+  OrgAppNameRule,
+} from '../../src/rules/governance/GovernanceRules';
 import * as fs from 'fs';
 import * as path from 'path';
 import { vi } from 'vitest';
@@ -54,7 +58,9 @@ describe('Governance Rules', () => {
         return true;
       });
       (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(['test.xml']);
-      (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue('<project>mule-maven-plugin</project>');
+      (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
+        '<project>mule-maven-plugin</project>',
+      );
 
       const issues = rule.validateProject(createContext(mockRoot));
 

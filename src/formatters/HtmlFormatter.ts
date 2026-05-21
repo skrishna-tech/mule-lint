@@ -80,7 +80,7 @@ function enrichFiles(report: LintReport): Array<{
 /**
  * Build client-side data payload
  */
- 
+
 function buildClientData(report: LintReport, enrichedFiles: ReturnType<typeof enrichFiles>) {
   const projectName = report.projectRoot.split('/').filter(Boolean).pop() ?? 'MuleSoft Project';
 

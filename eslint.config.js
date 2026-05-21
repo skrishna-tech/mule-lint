@@ -3,12 +3,7 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: [
-      '**/dist/**',
-      '**/node_modules/**',
-      '**/coverage/**',
-      '**/tests/**',
-    ],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/coverage/**', '**/tests/**'],
   },
 
   ...tseslint.configs.strictTypeChecked,
@@ -16,11 +11,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: [
-            'eslint.config.js',
-            'commitlint.config.ts',
-            'vitest.config.ts',
-          ],
+          allowDefaultProject: ['eslint.config.js', 'commitlint.config.ts', 'vitest.config.ts'],
         },
       },
     },

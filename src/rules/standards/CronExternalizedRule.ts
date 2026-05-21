@@ -54,12 +54,16 @@ export class SchedulerPropertyRule extends BaseRule {
     for (const node of schedulerNodes) {
       const expression = this.getAttribute(node, 'disallowConcurrentExecution');
 
-      if (expression != null && expression != "true") {
+      if (expression != null && expression != 'true') {
         issues.push(
-          this.createIssue(node, `disallowConcurrentExecution is not set or the value is set as false`, {
-            suggestion:
-              'disallowConcurrentExecution on Scheduler is recommended to set as true, edit this in XML view disallowConcurrentExecution="true"',
-          }),
+          this.createIssue(
+            node,
+            `disallowConcurrentExecution is not set or the value is set as false`,
+            {
+              suggestion:
+                'disallowConcurrentExecution on Scheduler is recommended to set as true, edit this in XML view disallowConcurrentExecution="true"',
+            },
+          ),
         );
       }
     }

@@ -16,7 +16,7 @@ export class FlowNamingRule extends BaseRule {
 
   validate(doc: Document, context: ValidationContext): Issue[] {
     const issues: Issue[] = [];
-    
+
     // Existing options still supported (string or string[])
     const flowSuffixOption = this.getOption(context, 'flowSuffix', undefined) as
       | string
@@ -104,7 +104,7 @@ export class FlowNamingRule extends BaseRule {
       }
     }
     */
-    const ok = endsWithAllowedSuffix(name, flowSuffixOption, defaultFlowSuffixRegex);
+      const ok = endsWithAllowedSuffix(name, flowSuffixOption, defaultFlowSuffixRegex);
       if (!ok) {
         issues.push(
           this.createIssue(flow, `Flow "${name}" should end with ${suggestionSuffixText('flow')}`, {
@@ -126,7 +126,7 @@ export class FlowNamingRule extends BaseRule {
       if (this.isExcluded(name, excludePatterns)) {
         continue;
       }
-      
+
       /*
       if (!name.endsWith(subflowSuffix)) {
         issues.push(

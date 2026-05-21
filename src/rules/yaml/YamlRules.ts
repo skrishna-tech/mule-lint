@@ -4,7 +4,7 @@ import { ValidationContext, Issue, IssueType } from '../../types';
 import { BaseRule } from '../base/BaseRule';
 import { ProjectRule } from '../base/ProjectRule';
 import { YamlParser } from '../../core/YamlParser';
-import {MulePaths} from '../base/MulePaths';
+import { MulePaths } from '../base/MulePaths';
 /**
  * YAML-001: Environment Properties Files
  *
@@ -101,18 +101,18 @@ export class MunitEnvironmentFilesRule extends ProjectRule {
     const muleAppName = this.getProjectArtifactIdFromPom(context);
     const requiredEnvs = this.getOption(context, 'environments', MulePaths.MUNIT_ENV);
     const existingFiles = new Set<string>();
-    
+
     for (const dir of searchDirs) {
       try {
         const files = fs.readdirSync(dir);
-        //files.forEach((f) => existingFiles.add(f.toLowerCase()));        
+        //files.forEach((f) => existingFiles.add(f.toLowerCase()));
         files.forEach((f) => {
           console.log(`Processing file: ${f}`);
           existingFiles.add(f.toLowerCase());
         });
       } catch {
         // Directory not readable
-        console.error(`Directory not reachable: ${dir}`)
+        console.error(`Directory not reachable: ${dir}`);
       }
     }
 

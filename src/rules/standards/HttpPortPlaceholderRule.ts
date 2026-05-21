@@ -2,7 +2,7 @@ import { ValidationContext, Issue } from '../../types';
 import { BaseRule } from '../base/BaseRule';
 import { MulePaths } from '../base/MulePaths';
 //import { PomHelper } from "../../core/PomHelper";
-import { PomValues } from "../base/PomValues";
+import { PomValues } from '../base/PomValues';
 import * as path from 'path';
 import * as fs from 'fs';
 /**
@@ -21,15 +21,15 @@ export class HttpPortPlaceholderRule extends BaseRule {
     const issues: Issue[] = [];
     const pomPath = path.join(_context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createFileIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
-    } 
+      );
+      return issues;
+    }
     const isCloudApp = PomValues.isCloudHubApp(pomPath);
-    console.log("app isCloudApp from HttpListenerValidationRule:", isCloudApp);
+    console.log('app isCloudApp from HttpListenerValidationRule:', isCloudApp);
     // Check HTTP listener configurations
     const listenerConfigs = this.select('//*[local-name()="listener-config"]', doc);
 
@@ -37,7 +37,7 @@ export class HttpPortPlaceholderRule extends BaseRule {
       const conns = this.select('//*[local-name()="listener-connection"]', config);
       for (const conn of conns) {
         const port = this.getAttribute(conn, 'port');
-        console.log("port in listener HttpListenerValidationRule1:", port);
+        console.log('port in listener HttpListenerValidationRule1:', port);
         //if (port && /^\d+$/.test(port)) {
         if (port && isCloudApp && !(port == '8081')) {
           // Port is a hardcoded number
@@ -71,36 +71,46 @@ export class HttpListenerValidationRule extends BaseRule {
     // Check HTTP listener configurations
     const pomPath = path.join(_context.projectRoot, MulePaths.POM_XML);
     if (!fs.existsSync(pomPath)) {
-        issues.push(
+      issues.push(
         this.createFileIssue('Missing pom.xml file in project root', {
-            severity: 'error',
+          severity: 'error',
         }),
-        );
-        return issues;
-    }    
+      );
+      return issues;
+    }
     const artifactId = PomValues.getArtifactId(pomPath);
     //console.log("app artifactId from HttpListenerValidationRule:", artifactId);
     const appPlatform = PomValues.getAppPlatform(pomPath);
-    //console.log("app appPlatform from HttpListenerValidationRule:", appPlatform);    
+    //console.log("app appPlatform from HttpListenerValidationRule:", appPlatform);
     // Check HTTP listener configurations
     let lastConfigRef: string | undefined;
     const listenerConfigs = this.select('//*[local-name()="listener"]', doc);
     for (const config of listenerConfigs) {
       const configName = this.getAttribute(config, 'config-ref');
-      //console.log(`Doc Name HttpListenerValidationRule: ${configName}`)        
-      if (appPlatform != undefined && appPlatform == 'onprem' && configName != undefined && !(configName == 'https-listener-config')){
+      //console.log(`Doc Name HttpListenerValidationRule: ${configName}`)
+      if (
+        appPlatform != undefined &&
+        appPlatform == 'onprem' &&
+        configName != undefined &&
+        !(configName == 'https-listener-config')
+      ) {
         issues.push(
           this.createIssue(config, `HTTP config "${configName}" is not valid in OnPrem"`, {
-          suggestion: 'use https-listener-config from parent pom',
+            suggestion: 'use https-listener-config from parent pom',
           }),
-        );      
+        );
       } //endifOnPrem
-      if (appPlatform != undefined && appPlatform == 'azcloud' && configName != undefined && !(configName == 'http-listener-config')){
+      if (
+        appPlatform != undefined &&
+        appPlatform == 'azcloud' &&
+        configName != undefined &&
+        !(configName == 'http-listener-config')
+      ) {
         issues.push(
           this.createIssue(config, `HTTP config "${configName}" is not valid in Azure"`, {
-          suggestion: 'use http-listener-config from parent pom',
+            suggestion: 'use http-listener-config from parent pom',
           }),
-        );      
+        );
       } //endifAzure
       break;
     }

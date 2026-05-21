@@ -44,13 +44,25 @@ import { ChoiceAntiPatternRule } from './standards/ChoiceAntiPatternRule';
 import { DwlStandardsRule } from './standards/DwlStandardsRule';
 import { DeprecatedComponentRule } from './standards/DeprecatedComponentRule';
 import { AutoDiscoveryRule } from './standards/AutoDiscoveryRule';
-import { HttpPortPlaceholderRule, HttpListenerValidationRule } from './standards/HttpPortPlaceholderRule';
+import {
+  HttpPortPlaceholderRule,
+  HttpListenerValidationRule,
+} from './standards/HttpPortPlaceholderRule';
 import { CronExternalizedRule, SchedulerPropertyRule } from './standards/CronExternalizedRule';
 import { ApiKitValidationRule } from './standards/ApiKitValidationRule';
 import { ConfigPropertiesOrderingRule } from './standards/ConfigPropertiesOrderingRule';
 import { MissingEnvPropertiesDeclarationRule } from './standards/MissingEnvPropertiesDeclarationRule';
 import { ApikitRouteVariableConsistencyRule } from './standards/ApikitRouteVariableConsistencyRule';
-import { AppDeployPlatformNotConfigured, MissingAwJSONLoggerRule, MissingAwErrorHandlingLibRule, Log4JNotModifiedRule, CH2SplunkLoggingNotEnabled, OrgAppNameRule, MissingCoreLoggingLibrary, IncorrectDistributionManagement } from './standards/MissingAWStandardComponents';
+import {
+  AppDeployPlatformNotConfigured,
+  MissingAwJSONLoggerRule,
+  MissingAwErrorHandlingLibRule,
+  Log4JNotModifiedRule,
+  CH2SplunkLoggingNotEnabled,
+  OrgAppNameRule,
+  MissingCoreLoggingLibrary,
+  IncorrectDistributionManagement,
+} from './standards/MissingAWStandardComponents';
 
 // Import all rules - HTTP
 import { HttpUserAgentRule } from './http/HttpUserAgentRule';
@@ -144,7 +156,16 @@ export { LoggerInUntilSuccessfulRule } from './logging/LoggerInUntilSuccessfulRu
 export { ChoiceAntiPatternRule } from './standards/ChoiceAntiPatternRule';
 export { DwlStandardsRule } from './standards/DwlStandardsRule';
 export { DeprecatedComponentRule } from './standards/DeprecatedComponentRule';
-export { AppDeployPlatformNotConfigured, MissingAwJSONLoggerRule, MissingAwErrorHandlingLibRule, Log4JNotModifiedRule, CH2SplunkLoggingNotEnabled, OrgAppNameRule, MissingCoreLoggingLibrary, IncorrectDistributionManagement } from './standards/MissingAWStandardComponents';
+export {
+  AppDeployPlatformNotConfigured,
+  MissingAwJSONLoggerRule,
+  MissingAwErrorHandlingLibRule,
+  Log4JNotModifiedRule,
+  CH2SplunkLoggingNotEnabled,
+  OrgAppNameRule,
+  MissingCoreLoggingLibrary,
+  IncorrectDistributionManagement,
+} from './standards/MissingAWStandardComponents';
 
 // Export individual rules - HTTP
 export { HttpUserAgentRule } from './http/HttpUserAgentRule';
@@ -198,7 +219,7 @@ export const ALL_RULES: Rule[] = [
   // Standards Rules (MULE-008, 010, 701)
   new ChoiceAntiPatternRule(),
   new DwlStandardsRule(),
-  new DeprecatedComponentRule(),   
+  new DeprecatedComponentRule(),
   new MissingAwJSONLoggerRule(),
   new MissingAwErrorHandlingLibRule(),
   new Log4JNotModifiedRule(),
@@ -289,7 +310,7 @@ export const ALL_RULES: Rule[] = [
 
   // Governance Rules (PROJ-001, PROJ-002)
   new PomValidationRule(),
-  new GitHygieneRule(),  
+  new GitHygieneRule(),
 
   // Connector Rules (SF-001, SF-002)
   new ReplayChannelConfigRule(), // SF-001: Salesforce Replay Channel Config

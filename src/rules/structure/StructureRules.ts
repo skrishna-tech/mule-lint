@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ValidationContext, Issue } from '../../types';
 import { BaseRule } from '../base/BaseRule';
-import {MulePaths} from '../base/MulePaths';
+import { MulePaths } from '../base/MulePaths';
 /**
  * MULE-802: Project Structure Validation
  *

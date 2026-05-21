@@ -21,7 +21,6 @@ export class MuleLintMcpServer {
   private engine: LintEngine;
 
   constructor() {
-     
     const packageJson = require('../../package.json') as { version: string };
     this.server = new McpServer({
       name: 'mule-lint',
