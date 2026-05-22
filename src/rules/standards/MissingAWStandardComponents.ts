@@ -336,6 +336,7 @@ export class Log4JNotModifiedRule extends ProjectRule {
     }
     try {
       const content = fs.readFileSync(log4j2Path, 'utf-8');
+      const appDeployPlatform = PomValues.getAppPlatform(pomPath);
       const isCloudhubApp = PomValues.isCloudHubApp(pomPath);
       if (
         isCloudhubApp != undefined &&
